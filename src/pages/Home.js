@@ -15,7 +15,7 @@ import Upload from '../components/Upload'
 function PostCard(props){
 
   return (
-    <div>
+    <div onClick={()=>{props.handlePostSelect(props.position)}} style={props.post.selected?{background:"green"}:{}}>
       
       <img style={{width:"100%",height:"100%",maxHeight:"25vw",maxHeight:"20vh"}} src={props.post.image}/>
       {
@@ -43,12 +43,16 @@ class Home extends React.Component{
         posts:[],
         submit:false,
         imagePreview:true,
-        selected:0
+        selected:0,
+        selectedLabel : "buildings"
 
       }
 
       this.handleDrop = this.handleDrop.bind(this);
       this.handleSubmit = this.handleSubmit.bind(this);
+      this.handleLabelConvert = this.handleLabelConvert.bind(this);
+      this.handlePostSelect = this.handlePostSelect.bind(this);
+      this.handleSelectedLabelChange = this.handleSelectedLabelChange.bind(this);
     }
 
     handleDrop = (e) => {
@@ -97,8 +101,67 @@ class Home extends React.Component{
             }
         }
     )();
+    }
+
+
+    handleSelectedLabelChange = (e)=>{
+      const newState = update(this.state,{
+        selectedLabel:{$set:e.target.value}
+      })
+      this.setState(newState);
+    }
     
-    
+    handleLabelConvert = ()=>{
+      const posts  = this.state.posts;
+
+      var processedPosts = [];
+      for(var i=0;i<posts.length;i++){
+        
+        if(posts[i].selected){
+          processedPosts.push(Object.assign({},{pid:posts[i].pid,image:posts[i].image,label:this.state.selectedLabel,confidence:posts[i].confidence}))
+        }else{
+          processedPosts.push(Object.assign({},{pid:posts[i].pid,image:posts[i].image,label:posts[i].label,confidence:posts[i].confidence}))
+        }
+        
+      }
+
+      const newState = update(this.state,{
+        posts:{
+          $set : processedPosts
+        },
+        selectedLabel:"buildings",
+        selected:{$set:0}
+      })
+
+      this.setState(newState);
+
+    }
+
+    handlePostSelect = (position)=>{
+      console.log(position)
+      if(!this.state.posts[position].selected){
+        const newState = update(this.state,{
+          posts : {
+            [position]:{
+              selected : {$set: true }
+            }
+          },
+          selected : {$set: this.state.selected + 1}
+        })
+
+        this.setState(newState);
+      }else{
+        const newState = update(this.state,{
+          posts:{
+            [position]:{
+              selected:{$set:false}
+            }
+          },
+          selected:{$set:this.state.selected - 1}
+        })
+        this.setState(newState);
+      }
+      
     }
 
     render(){
@@ -149,13 +212,19 @@ class Home extends React.Component{
               this.state.posts.length > 0 &&
                 this.state.selected > 0 &&
                   <div>
-
+                      <h4>Convert {this.state.selected} posts label to : </h4> 
+                      <select onChange={this.handleSelectedLabelChange} defaultValue="buildings">
+                        <option value="buildings">Buildings</option>
+                        <option value="street">Street</option>
+                        <option valie="glacier">Glacier</option>
+                      </select>
+                      <button onClick={this.handleLabelConvert}>Convert</button>
                   </div>
             }
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"50px",maxHeight:"60vh",overflowY:"scroll"}}>
               {
-                this.state.posts.length > 0 && this.state.posts.map((post)=>{
-                    return <PostCard post={post}/> 
+                this.state.posts.length > 0 && this.state.posts.map((post,index)=>{
+                    return <PostCard position={index} post={post} handlePostSelect={this.handlePostSelect}/> 
                 })
               }
             </div>

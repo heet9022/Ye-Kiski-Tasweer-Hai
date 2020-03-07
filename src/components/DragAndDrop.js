@@ -3,9 +3,14 @@ import React from 'react'
 import styles from './styles/DragAndDrop.module.css'
 
 class DragAndDrop extends React.Component {
-  state = {
-    drag: false
+  constructor(props)
+  {
+      super(props)
+      this.state = {
+        drag: false
+      }
   }
+  
   dropRef = React.createRef()
   handleDrag = (e) => {
     e.preventDefault()

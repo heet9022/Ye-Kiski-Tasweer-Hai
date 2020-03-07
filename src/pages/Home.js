@@ -19,8 +19,9 @@ class Home extends React.Component{
 
       this.state = {
         files: [],
+        posts:[],
         submit:false,
-        imagePreview: false,
+        imagePreview:false
 
       }
 
@@ -32,21 +33,27 @@ class Home extends React.Component{
       const newState = update(this.state,{
         files:{
           $push : Array.from(files),
-          
         }
       })
-      this.setState(newState,()=>{
-        console.log(this.state);
-      })
+      this.setState(newState)
 
-     if (this.state.files.length > 0)
-     {
-      this.setState({imagePreview:true});
-     } 
-     else 
-     {
-      this.setState({imagePreview:false});
-     }
+      this.state.files.length>0?this.setState({imagePreview:true}):this.setState({imagePreview:false})
+
+      
+    }
+
+    updatePlease() {
+      var processedFiles = []
+      for(var i=0;i<this.state.files.length;i++){
+        processedFiles.push(Object.assign({},{image:URL.createObjectURL(this.state.files[i]),label:null,confidence:null}))
+      }
+      const newState2 = update(this.state,{
+        posts:{
+          $push : Array.from(processedFiles),
+        }
+      })
+      this.setState(newState2)
+      console.log(this.state.posts)
     }
 
     handleSubmit(e) {
@@ -69,8 +76,14 @@ class Home extends React.Component{
                         posts.push(Object.assign({},{image:signedResponse.data.id}));  
                     }
                 }
-                await customAxios.post('post',{posts:posts});
-      
+                const pids = await customAxios.post('post',{posts:posts});
+                console.log(pids)
+
+                const processedPosts = await customAxios.post('model/test',{pids:pids})
+
+                this.setState({posts:processedPosts,submit:true});
+
+
             }catch(e){
                 console.log(e);
                 console.log("Something Went Wrong");
@@ -78,20 +91,36 @@ class Home extends React.Component{
         }
     )();
     
-    this.setState({submit:true});
+    
     }
 
     render(){
-      var processedFiles = []
+      
 
-      for(var i=0;i<this.state.files.length;i++){
-        processedFiles.push(Object.assign({},{image:URL.createObjectURL(this.state.files[i]),label:null,confidence:null}))
-      }
+      // var upload = null;
 
-      let upload = (this.state.imagePreview)?<ViewGrid files={processedFiles} submit={this.state.submit}></ViewGrid>:<div className="Status">Drag Files here</div>; 
+      // if(!this.state.submit){
+      //   if(this.state.imagePreview){
+        
+      //     upload = <ViewGrid posts={processedFiles} submit={this.state.submit}></ViewGrid>
+      //   }else{
+      //     upload = <div>Drag Files Here</div>
+      //   }
+      // }else{
+      //   if(this.state.posts.length>0){
+      //     upload = <ViewGrid posts={this.state.posts} submit={this.state.submit}></ViewGrid>  
+      //   }else{
+      //     upload = "h1"
+      //   }
+      // }
+
+      // console.log(upload)
+      this.updatePlease()
+
+      let upload = (this.state.imagePreview)?(<ViewGrid posts={this.state.posts} submit={this.state.submit}/>):(<div>Drag Files Here</div>);
 
       return(
-        <div>
+        <div style={{display:"flex",justifyContent:"center",flexDirection:"column"}}>
           
           <DragAndDrop handleDrop={this.handleDrop} >
             
@@ -103,16 +132,39 @@ class Home extends React.Component{
                 })
               }
             </div> */}
-            <Box style = {{background: '#efefef', display: 'flex', transition: 'all 250ms ease-in-out 0s', height: 'calc(80vh - 80px)', width: 'calc(80vw - 80px)', border: 'solid 40px transparent', position: 'relative', alignItems:'center', justifyContent: 'center'}}>
+            <div style={{background:"#efefef",margin:"50px",textAlign:"center"}}>
+
               {upload}
-            
-              <Button variant="contained" color="primary" onClick={()=>{console.log("Vah");this.handleSubmit()}}>
-                Test
-              </Button>
+              {/* {
+                (!this.state.submit)?
+                  (this.state.files>0)?
+                    
+                    (
+                        
+                      this.state.files.map((file)=>{
+                        processedFiles.push(Object.assign({},{image:URL.createObjectURL(this.state.files[i]),label:null,confidence:null}))
+                      })
+
+                      (<ViewGrid posts={processedFiles} submit={this.state.submit}></ViewGrid>)
+                    )
+                  :
+                    upload = <div>Drag Files Here</div>
+                  
+                :
+                  (this.state.posts.length>0)?
+                    <ViewGrid posts={this.state.posts} submit={this.state.submit}></ViewGrid>  
+                  :
+                    "h1"
+                  
+              } */}
+            </div>
               
-            </Box>  
+              
           </DragAndDrop>  
-           
+          <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{console.log("Vah");this.handleSubmit()}}>
+                Test
+          </Button>
+
       </div>
       )
     }

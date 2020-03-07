@@ -1,5 +1,7 @@
 import React from 'react'
 
+import styles from './styles/DragAndDrop.module.css'
+
 class DragAndDrop extends React.Component {
   state = {
     drag: false
@@ -51,11 +53,12 @@ class DragAndDrop extends React.Component {
   }
   render() {
     return (
+      
       <div
-        style={{display: 'inline-block', position: 'relative'}}
+        
         ref={this.dropRef}
       >
-        {this.state.dragging &&
+        {this.state.drag &&
           <div 
             style={{
               border: 'dashed grey 4px',
@@ -68,7 +71,7 @@ class DragAndDrop extends React.Component {
               zIndex: 9999
             }}
           >
-            <div 
+            {/* <div 
               style={{
                 position: 'absolute',
                 top: '50%',
@@ -79,8 +82,8 @@ class DragAndDrop extends React.Component {
                 fontSize: 36
               }}
             >
-              <div>drop here :)</div>
-            </div>
+              <div>Drop Here</div>
+            </div> */}
           </div>
         }
         {this.props.children}

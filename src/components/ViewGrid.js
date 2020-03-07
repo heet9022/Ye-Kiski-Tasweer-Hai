@@ -14,7 +14,7 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.background.paper,
   },
   gridList: {
-    width: 600,
+    width: '100%',
     height: 450,
   },
 }));
@@ -36,22 +36,48 @@ const tileData = [
         label: 'Wallpaper',
         confidence: '90%',
     },
+    {
+        img: 'assets/Screenshot (1).png',
+        label: 'Wallpaper',
+        confidence: '90%',
+    },
+    {
+        img: 'assets/Screenshot (2).png',
+        label: 'Wallpaper',
+        confidence: '90%',
+    },
+    {
+        img: 'assets/Screenshot (3).png',
+        label: 'Wallpaper',
+        confidence: '90%',
+    },
+    {
+        img: 'assets/Screenshot (4).png',
+        label: 'Wallpaper',
+        confidence: '90%',
+    },
+    {
+        img: 'assets/Screenshot (5).png',
+        label: 'Wallpaper',
+        confidence: '90%',
+    },
 ];
 
-export default function ImageGridList() {
+export default function ImageGridList(props) {
   const classes = useStyles();
-
+    
   return (
     <div className={classes.root}>
-      <GridList cellHeight={180} cellWidth={180} className={classes.gridList} cols = {3}>
+      <GridList cellHeight={180} className={classes.gridList} cols = {4}>
         
-        {tileData.map(tile => (
+        {props.files.map(tile => (
           <GridListTile key={tile.img}>
-            <img src={tile.img} alt={tile.label} />
-            <GridListTileBar
+            <img src={tile.image} alt={tile.label} />
+            {(props.submit)?<GridListTileBar
               title={tile.label}
               subtitle={<span>Confidence: {tile.confidence}</span>}
-            />
+            />: null}
+            
           </GridListTile>
         ))}
       </GridList>

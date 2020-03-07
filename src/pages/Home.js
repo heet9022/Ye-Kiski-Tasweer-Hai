@@ -1,6 +1,6 @@
 import React from 'react';
 
-import styles from './styles/Home.module.css'
+import styles from './styles/Home.css'
 import DragAndDrop from '../components/DragAndDrop'
 import ViewGrid from '../components/ViewGrid'
 import {Container, Box, Button} from '@material-ui/core'
@@ -9,6 +9,7 @@ import update from 'immutability-helper';
 import customAxios from '../others/customaxios';
 import axios from 'axios';
 
+import Upload from '../components/Upload'
 
 class Home extends React.Component{
 
@@ -18,7 +19,9 @@ class Home extends React.Component{
 
       this.state = {
         files: [],
-        responseID : []
+        submit:false,
+        imagePreview: false,
+
       }
 
       this.handleDrop = this.handleDrop.bind(this);
@@ -28,12 +31,22 @@ class Home extends React.Component{
     handleDrop = (files) => {
       const newState = update(this.state,{
         files:{
-          $push : Array.from(files)
+          $push : Array.from(files),
+          
         }
       })
       this.setState(newState,()=>{
         console.log(this.state);
       })
+
+     if (this.state.files.length > 0)
+     {
+      this.setState({imagePreview:true});
+     } 
+     else 
+     {
+      this.setState({imagePreview:false});
+     }
     }
 
     handleSubmit(e) {
@@ -64,29 +77,42 @@ class Home extends React.Component{
             }
         }
     )();
-      
+    
+    this.setState({submit:true});
     }
 
     render(){
+      var processedFiles = []
+
+      for(var i=0;i<this.state.files.length;i++){
+        processedFiles.push(Object.assign({},{image:URL.createObjectURL(this.state.files[i]),label:null,confidence:null}))
+      }
+
+      let upload = (this.state.imagePreview)?<ViewGrid files={processedFiles} submit={this.state.submit}></ViewGrid>:<div className="Status">Drag Files here</div>; 
 
       return(
         <div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr"}}>
+          
+          <DragAndDrop handleDrop={this.handleDrop} >
             
-            {
-              this.state.files.length > 0 && this.state.files.map((file)=>{
-                return <img style={{height:"250px", width:"250px"}} src={URL.createObjectURL(file)} />
-              })
-            }
-            </div>
-          <DragAndDrop handleDrop={this.handleDrop}>
-            <Box style = {{height: '100vh', width: '100vw', border: '1px solid black'}}>
+            {/* <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr"}}>
+              
+              {
+                this.state.files.length > 0 && this.state.files.map((file)=>{
+                  return <img style={{height:"180px", width:"180px"}} src={URL.createObjectURL(file)} />
+                })
+              }
+            </div> */}
+            <Box style = {{background: '#efefef', display: 'flex', transition: 'all 250ms ease-in-out 0s', height: 'calc(80vh - 80px)', width: 'calc(80vw - 80px)', border: 'solid 40px transparent', position: 'relative', alignItems:'center', justifyContent: 'center'}}>
+              {upload}
+            
               <Button variant="contained" color="primary" onClick={()=>{console.log("Vah");this.handleSubmit()}}>
                 Test
               </Button>
+              
             </Box>  
-          </DragAndDrop> 
-          <ViewGrid></ViewGrid>
+          </DragAndDrop>  
+           
       </div>
       )
     }

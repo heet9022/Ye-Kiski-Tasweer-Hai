@@ -11,6 +11,27 @@ import axios from 'axios';
 
 import Upload from '../components/Upload'
 
+
+function PostCard(props){
+
+  return (
+    <div>
+      
+      <img style={{width:"100%",height:"100%",maxHeight:"25vw",maxHeight:"20vh"}} src={props.post.image}/>
+      {
+        props.post.label && <h4>Label : {props.post.label}</h4>
+      }
+      {
+        props.post.confidence && <h4>Confidence : {props.post.confidence}</h4>
+      }
+      
+    </div>
+  )
+
+}
+
+
+
 class Home extends React.Component{
 
     constructor(props)
@@ -21,7 +42,8 @@ class Home extends React.Component{
         files: [],
         posts:[],
         submit:false,
-        imagePreview:false
+        imagePreview:true,
+        selected:0
 
       }
 
@@ -29,31 +51,16 @@ class Home extends React.Component{
       this.handleSubmit = this.handleSubmit.bind(this);
     }
 
-    handleDrop = (files) => {
+    handleDrop = (e) => {
+      const files = e.target.files;
+
       const newState = update(this.state,{
         files:{
           $push : Array.from(files),
+          
         }
       })
       this.setState(newState)
-
-      this.state.files.length>0?this.setState({imagePreview:true}):this.setState({imagePreview:false})
-
-      
-    }
-
-    updatePlease() {
-      var processedFiles = []
-      for(var i=0;i<this.state.files.length;i++){
-        processedFiles.push(Object.assign({},{image:URL.createObjectURL(this.state.files[i]),label:null,confidence:null}))
-      }
-      const newState2 = update(this.state,{
-        posts:{
-          $push : Array.from(processedFiles),
-        }
-      })
-      this.setState(newState2)
-      console.log(this.state.posts)
     }
 
     handleSubmit(e) {
@@ -76,10 +83,10 @@ class Home extends React.Component{
                         posts.push(Object.assign({},{image:signedResponse.data.id}));  
                     }
                 }
-                const pids = await customAxios.post('post',{posts:posts});
+                const pids = (await customAxios.post('post',{posts:posts})).data || [];
                 console.log(pids)
 
-                const processedPosts = await customAxios.post('model/test',{pids:pids})
+                const processedPosts = (await customAxios.post('model/test',{pids:pids})).data || []
 
                 this.setState({posts:processedPosts,submit:true});
 
@@ -101,7 +108,12 @@ class Home extends React.Component{
 
       // if(!this.state.submit){
       //   if(this.state.imagePreview){
-        
+      //     var processedFiles = []
+
+      //     for(var i=0;i<this.state.files.length;i++){
+      //       processedFiles.push(Object.assign({},{image:URL.createObjectURL(this.state.files[i]),label:null,confidence:null}))
+      //     }
+
       //     upload = <ViewGrid posts={processedFiles} submit={this.state.submit}></ViewGrid>
       //   }else{
       //     upload = <div>Drag Files Here</div>
@@ -115,52 +127,39 @@ class Home extends React.Component{
       // }
 
       // console.log(upload)
-      this.updatePlease()
-
-      let upload = (this.state.imagePreview)?(<ViewGrid posts={this.state.posts} submit={this.state.submit}/>):(<div>Drag Files Here</div>);
 
       return(
-        <div style={{display:"flex",justifyContent:"center",flexDirection:"column"}}>
-          
-          <DragAndDrop handleDrop={this.handleDrop} >
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+          <div>
+            {
+              !this.state.submit && 
+                <div> 
+                  <input type="file" accept="image/*" multiple={true} onChange={this.handleDrop}/>
+                </div>
+            }
             
-            {/* <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr"}}>
-              
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"50px",maxHeight:"60vh",overflowY:"scroll"}}>
               {
-                this.state.files.length > 0 && this.state.files.map((file)=>{
-                  return <img style={{height:"180px", width:"180px"}} src={URL.createObjectURL(file)} />
+                !this.state.submit && this.state.files.length > 0 && this.state.files.map((file)=>{
+                    return <PostCard post={{image:URL.createObjectURL(file),label:null,confidence:null}}/> 
                 })
               }
-            </div> */}
-            <div style={{background:"#efefef",margin:"50px",textAlign:"center"}}>
-
-              {upload}
-              {/* {
-                (!this.state.submit)?
-                  (this.state.files>0)?
-                    
-                    (
-                        
-                      this.state.files.map((file)=>{
-                        processedFiles.push(Object.assign({},{image:URL.createObjectURL(this.state.files[i]),label:null,confidence:null}))
-                      })
-
-                      (<ViewGrid posts={processedFiles} submit={this.state.submit}></ViewGrid>)
-                    )
-                  :
-                    upload = <div>Drag Files Here</div>
-                  
-                :
-                  (this.state.posts.length>0)?
-                    <ViewGrid posts={this.state.posts} submit={this.state.submit}></ViewGrid>  
-                  :
-                    "h1"
-                  
-              } */}
             </div>
-              
-              
-          </DragAndDrop>  
+            {
+              this.state.posts.length > 0 &&
+                this.state.selected > 0 &&
+                  <div>
+
+                  </div>
+            }
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"50px",maxHeight:"60vh",overflowY:"scroll"}}>
+              {
+                this.state.posts.length > 0 && this.state.posts.map((post)=>{
+                    return <PostCard post={post}/> 
+                })
+              }
+            </div>
+          </div>  
           <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{console.log("Vah");this.handleSubmit()}}>
                 Test
           </Button>

@@ -70,7 +70,7 @@ export default function ImageGridList(props) {
     <div className={classes.root}>
       <GridList cellHeight={180} className={classes.gridList} cols = {4}>
         
-        {props.files.map(tile => (
+        {props.posts.map(tile => (
           <GridListTile key={tile.img}>
             <img src={tile.image} alt={tile.label} />
             {(props.submit)?<GridListTileBar

@@ -25,6 +25,8 @@ import {DropzoneArea} from 'material-ui-dropzone'
 import DropZoneUploader from './../components/DropZoneUploader'
 
 
+import socketIOClient from 'socket.io-client'
+
 function PostCard(props){
 
   return (
@@ -40,7 +42,7 @@ function PostCard(props){
       
     // </div>
       <div>
-        <Card raised='false' style={{maxWidth:400}} onClick={()=>{props.handlePostSelect(props.position)}} style={props.post.selected?{background:"green"}:{}}>
+        <Card raised='false' style={{maxWidth:400}} onClick={()=>{props.handlePostSelect(props.position)}} style={props.post.selected?{border: "1px solid #4caf50"}:{}}>
         { props.post.label &&
         <CardHeader
 
@@ -94,6 +96,7 @@ class Home extends React.Component{
         loading:false,
         showParameterDialog:false,
         home:true,
+        loading_train:false
         
 
 
@@ -110,6 +113,22 @@ class Home extends React.Component{
       this.handleParameterChange = this.handleParameterChange.bind(this);
 
     }
+
+    componentDidMount(){
+      const socket = socketIOClient("http://Yetasveerkiskihaiserver-env.eba-mfgmqh2i.ap-south-1.elasticbeanstalk.com");
+      socket.on("tested",(data)=>{
+
+        console.log("data returned")
+        this.setState({posts:data.posts,submit:true,loading:false})
+      })
+
+      socket.on("trained",(data)=>{
+        console.log("model trained")
+        this.setState({showParameterDialog:false, loading_train:false})
+        
+      })
+    }
+
 
     handleDrop = (e) => {
       const files = e.target.files;
@@ -147,35 +166,37 @@ class Home extends React.Component{
                 const pids = (await customAxios.post('post',{posts:posts})).data || [];
                 console.log(pids)
 
-                const processedPosts = (await customAxios.post('model/test',{pids:pids})).data || []
+                ((await customAxios.post('model/test',{pids:pids})).data || [])
 
-                this.setState({posts:processedPosts,submit:true, });
+                this.setState({loading:true,submit:false});
 
 
             }catch(e){
                 console.log(e);
                 console.log("Something Went Wrong");
             }
-            this.setState({loading:false})
         }
     )();
     }
 
     handleTrain = ()=>{
+      
       (
+
         async ()=>{
             try{
-                
+                this.setState({loading_train:true})
                 const pids = (await customAxios.post('post/edit',{posts:this.state.posts})).data || [];
 
                 const processedPosts = (await customAxios.post('model/train',{pids:pids,model:this.state.model})).data || []
 
-                this.setState({showParameterDialog:false})
+                this.setState({showParameterDialog:true})
 
             }catch(e){
                 console.log(e);
                 console.log("Something Went Wrong");
             }
+            
         }
     )();
     }
@@ -294,7 +315,8 @@ class Home extends React.Component{
     render(){
       
       return(
-        this.state.loading?<CircularProgress/>:
+        this.state.loading?<div style={{height:'100vh', width:'100vw', textAlign:'center'}}><CircularProgress/></div>:
+
         <div style={{textAlign:'center'}}>
           
           {/* DROP AREA */}
@@ -304,7 +326,7 @@ class Home extends React.Component{
             <div style={{maxHeight:"80vh", overflowY:"scroll"}}>
                 <DropzoneArea 
                     onChange={this.handleChange.bind(this)}
-                    acceptedFiles={['image/*']}
+                    acceptedFiles={['image/jpg', 'image/jpeg', 'image/png']}
                     // showPreviews={true}
                     maxFileSize={5000000}
                     filesLimit = {500}
@@ -336,7 +358,10 @@ class Home extends React.Component{
                         <select onChange={this.handleSelectedLabelChange} defaultValue="buildings">
                           <option value="buildings">Buildings</option>
                           <option value="street">Street</option>
-                          <option valie="glacier">Glacier</option>
+                          <option value="glacier">Glacier</option>
+                          <option value="mountain">Mountain</option>
+                          <option value="sea">Sea</option>
+                          <option value="forest">Forest</option>
                         </select>
                         <button onClick={this.handleLabelConvert}>Convert</button>
                     </div>
@@ -351,10 +376,10 @@ class Home extends React.Component{
             
               {
 
-                !this.state.submit &&
+      
                 <div>
                   <br/>
-                  <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleTest()}}>
+                  <Button size="small" style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleTest()}}>
                     Test
                   </Button>
                 </div>
@@ -363,16 +388,18 @@ class Home extends React.Component{
               {
                 this.state.submit &&
                 <div>
-                  <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleToggleParametersDialog()}}>
+                  <Button size="small" style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleToggleParametersDialog()}}>
                     Retrain
                   </Button>
-                  <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleHome()}}>
+                  {/* <Button size="small" style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleHome()}}>
                     Home
-                  </Button>
+                  </Button> */}
                 </div>
               
               }
               <Dialog
+
+                onClose = {()=>{this.setState({showParameterDialog:false})}}
                 open={this.state.showParameterDialog}
                 style={{padding:"50px"}}
               > 
@@ -382,7 +409,7 @@ class Home extends React.Component{
                   Epochs : <input name="epochs" type="number" value={this.state.model.epochs} onChange={this.handleParameterChange}/>
                   Ratio of Validation to Dataset / SPLIT_PCT : <input name="split_pct" type="number" value={this.state.model.split_pct} onChange={this.handleParameterChange}/>
 
-                  <Button onClick={this.handleTrain}>Retrain</Button>
+                  {this.state.loading_train?<div style={{textAlign:'center'}}><CircularProgress/></div>:<Button size="small" onClick={this.handleTrain}>Retrain</Button>}
                 
               </Dialog>
   

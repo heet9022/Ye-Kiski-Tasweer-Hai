@@ -9,6 +9,9 @@ import update from 'immutability-helper';
 import customAxios from '../others/customaxios';
 import axios from 'axios';
 
+import Dialog from '@material-ui/core/Dialog';
+import DialogTitle from '@material-ui/core/DialogTitle'
+
 import Upload from '../components/Upload'
 
 
@@ -41,18 +44,23 @@ class Home extends React.Component{
       this.state = {
         files: [],
         posts:[],
+        model:{},
         submit:false,
         imagePreview:true,
         selected:0,
-        selectedLabel : "buildings"
+        selectedLabel : "buildings",
+        showParameterDialog:false
 
       }
 
       this.handleDrop = this.handleDrop.bind(this);
-      this.handleSubmit = this.handleSubmit.bind(this);
+      this.handleTest = this.handleTest.bind(this);
+      this.handleTrain = this.handleTrain.bind(this);
       this.handleLabelConvert = this.handleLabelConvert.bind(this);
       this.handlePostSelect = this.handlePostSelect.bind(this);
       this.handleSelectedLabelChange = this.handleSelectedLabelChange.bind(this);
+      this.handleToggleParametersDialog = this.handleToggleParametersDialog.bind(this);
+      this.handleParameterChange = this.handleParameterChange.bind(this);
     }
 
     handleDrop = (e) => {
@@ -67,7 +75,7 @@ class Home extends React.Component{
       this.setState(newState)
     }
 
-    handleSubmit(e) {
+    handleTest(e) {
       
       (
         async ()=>{
@@ -103,6 +111,22 @@ class Home extends React.Component{
     )();
     }
 
+    handleTrain = ()=>{
+      (
+        async ()=>{
+            try{
+                
+                const pids = (await customAxios.post('post/edit',{posts:this.state.posts})).data || [];
+
+                const processedPosts = (await customAxios.post('model/train',{pids:pids,model:this.state.model})).data || []
+
+            }catch(e){
+                console.log(e);
+                console.log("Something Went Wrong");
+            }
+        }
+    )();
+    }
 
     handleSelectedLabelChange = (e)=>{
       const newState = update(this.state,{
@@ -129,7 +153,7 @@ class Home extends React.Component{
         posts:{
           $set : processedPosts
         },
-        selectedLabel:"buildings",
+        selectedLabel:{$set:"buildings"},
         selected:{$set:0}
       })
 
@@ -162,6 +186,40 @@ class Home extends React.Component{
         this.setState(newState);
       }
       
+    }
+
+    handleToggleParametersDialog = ()=>{
+      if(!this.state.showParameterDialog){
+
+        customAxios.get('model')
+          .then((response)=>{
+            const newState = update(this.state,{
+              model:{$set:response.data},
+              showParameterDialog:{$set:true}
+            })
+            this.setState(newState)
+        
+          })
+          .catch((err)=>{
+
+          })
+
+          
+      }else{
+        this.setState({showParameterDialog:false})
+      }
+    }
+
+    handleParameterChange = (e)=>{
+      const newState =  update(this.state,{
+        model:{
+          [e.target.name]:{
+            $set:e.target.value
+          }
+        }
+      })
+
+      this.setState(newState);
     }
 
     render(){
@@ -228,11 +286,35 @@ class Home extends React.Component{
                 })
               }
             </div>
-          </div>  
-          <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{console.log("Vah");this.handleSubmit()}}>
-                Test
-          </Button>
+          </div>
+          {
+            !this.state.submit &&
+            <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleTest()}}>
+              Test
+            </Button>
 
+          }
+          {
+            this.state.submit &&
+            <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleToggleParametersDialog()}}>
+              Re Train
+            </Button>
+          
+          }
+          <Dialog
+            open={this.state.showParameterDialog}
+            style={{padding:"50px"}}
+          > 
+            <DialogTitle>Change Model Parameters</DialogTitle>
+
+              Learning Rate : <input name="learning_rate" type="number" value={this.state.model.learning_rate} onChange={this.handleParameterChange}/>
+              WD : <input name="weight_decay" type="number" value={this.state.model.weight_decay} onChange={this.handleParameterChange}/>
+              PS : <input name="dropout" type="number" value={this.state.model.dropout} onChange={this.handleParameterChange}/>
+              Ratio of Validation to Dataset / SPLIT_PCT : <input name="split_pct" type="number" value={this.state.model.split_pct} onChange={this.handleParameterChange}/>
+
+              <Button onClick={this.handleTrain}>Re Train</Button>
+            
+          </Dialog>
       </div>
       )
     }

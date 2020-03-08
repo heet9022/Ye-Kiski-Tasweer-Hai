@@ -20,6 +20,10 @@ import {CameraAltOutlined, VideocamOutlined} from '@material-ui/icons';
 import Paper from '@material-ui/core/Paper';
 import {Card, CardActionArea , CardActions , CardContent , CardMedia , Typography, CardHeader } from '@material-ui/core';
 
+import {DropzoneArea} from 'material-ui-dropzone'
+
+import DropZoneUploader from './../components/DropZoneUploader'
+
 
 function PostCard(props){
 
@@ -89,6 +93,7 @@ class Home extends React.Component{
 
         loading:false,
         showParameterDialog:false,
+        home:true,
         
 
 
@@ -144,7 +149,7 @@ class Home extends React.Component{
 
                 const processedPosts = (await customAxios.post('model/test',{pids:pids})).data || []
 
-                this.setState({posts:processedPosts,submit:true});
+                this.setState({posts:processedPosts,submit:true, });
 
 
             }catch(e){
@@ -269,95 +274,119 @@ class Home extends React.Component{
       this.setState(newState);
     }
 
+    handleChange(files){
+      this.setState({
+        files: files
+      });
+      console.log(this.state.files)
+    }
+
+    handleHome(e)
+    {
+      this.setState(
+        {
+          // home:true,
+          submit:false
+        }
+      )
+    }
+
     render(){
       
       return(
-
-
-        
-
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
-          {
-            this.state.loading?<CircularProgress/>:
-            <div>
-            {
-              !this.state.submit && 
-              <div className = {styles.fileUpload}>
-
-                <label htmlFor="photo-button-file">
-                    <IconButton
-                        color="primary"
-                        // className={useStyles.button}
-                        component="span"
-                        edge="start"
-                    >
-                        <CameraAltOutlined/>
-                    </IconButton>
-                </label>
-                <input id = "photo-button-file"  multiple={true} type="file" accept="image/*" onChange={this.handleDrop}/>
-              
-              </div>
-            }
-            
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
-              {
-                !this.state.submit && this.state.files.length > 0 && this.state.files.map((file)=>{
-                    return <PostCard post={{image:URL.createObjectURL(file),label:null,confidence:null}}/> 
-                })
-              }
-            </div>
-            {
-              this.state.posts.length > 0 &&
-                this.state.selected > 0 &&
-                  <div>
-                      <h4>Convert {this.state.selected} posts label to : </h4> 
-                      <select onChange={this.handleSelectedLabelChange} defaultValue="buildings">
-                        <option value="buildings">Buildings</option>
-                        <option value="street">Street</option>
-                        <option valie="glacier">Glacier</option>
-                      </select>
-                      <button onClick={this.handleLabelConvert}>Convert</button>
-                  </div>
-            }
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
-              {
-                this.state.posts.length > 0 && this.state.posts.map((post,index)=>{
-                    return <PostCard position={index} post={post} handlePostSelect={this.handlePostSelect}/> 
-                })
-              }
-            </div>
+        this.state.loading?<CircularProgress/>:
+        <div style={{textAlign:'center'}}>
           
-            {
-              !this.state.submit &&
-              <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleTest()}}>
-                Test
-              </Button>
-
-            }
-            {
-              this.state.submit &&
-              <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleToggleParametersDialog()}}>
-                Re Train
-              </Button>
+          {/* DROP AREA */}
+          {
             
-            }
-            <Dialog
-              open={this.state.showParameterDialog}
-              style={{padding:"50px"}}
-            > 
-              <DialogTitle>Change Model Parameters</DialogTitle>
-
-                Learning Rate : <input name="learning_rate" type="number" value={this.state.model.learning_rate} onChange={this.handleParameterChange}/>
-                Epochs : <input name="epochs" type="number" value={this.state.model.epochs} onChange={this.handleParameterChange}/>
-                Ratio of Validation to Dataset / SPLIT_PCT : <input name="split_pct" type="number" value={this.state.model.split_pct} onChange={this.handleParameterChange}/>
-
-                <Button onClick={this.handleTrain}>Re Train</Button>
-              
-            </Dialog>
+            !this.state.submit &&
+            <div style={{maxHeight:"80vh", overflowY:"scroll"}}>
+                <DropzoneArea 
+                    onChange={this.handleChange.bind(this)}
+                    acceptedFiles={['image/*']}
+                    // showPreviews={true}
+                    maxFileSize={5000000}
+                    filesLimit = {500}
+                    showAlerts = {false}
+                    />
             </div>
-          }
+          } 
+
+
+          {/* <div style={{display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+            
+            {
+              this.state.loading?<CircularProgress/>:
+              
+              }
+              
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
+                {
+                  !this.state.submit && this.state.files.length > 0 && this.state.files.map((file)=>{
+                      return <PostCard post={{image:URL.createObjectURL(file),label:null,confidence:null}}/> 
+                  })
+                }
+              </div> */}
+              {
+                this.state.posts.length > 0 &&
+                  this.state.selected > 0 &&
+                    <div>
+                        <h4>Convert {this.state.selected} posts label to : </h4> 
+                        <select onChange={this.handleSelectedLabelChange} defaultValue="buildings">
+                          <option value="buildings">Buildings</option>
+                          <option value="street">Street</option>
+                          <option valie="glacier">Glacier</option>
+                        </select>
+                        <button onClick={this.handleLabelConvert}>Convert</button>
+                    </div>
+              }
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
+                {
+                  this.state.submit && this.state.posts.length > 0 && this.state.posts.map((post,index)=>{
+                      return <PostCard position={index} post={post} handlePostSelect={this.handlePostSelect}/> 
+                  })
+                }
+              </div>
+            
+              {
+
+                !this.state.submit &&
+                <div>
+                  <br/>
+                  <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleTest()}}>
+                    Test
+                  </Button>
+                </div>
+
+              }
+              {
+                this.state.submit &&
+                <div>
+                  <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleToggleParametersDialog()}}>
+                    Retrain
+                  </Button>
+                  <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleHome()}}>
+                    Home
+                  </Button>
+                </div>
+              
+              }
+              <Dialog
+                open={this.state.showParameterDialog}
+                style={{padding:"50px"}}
+              > 
+                <DialogTitle>Change Model Parameters</DialogTitle>
+
+                  Learning Rate : <input name="learning_rate" type="number" value={this.state.model.learning_rate} onChange={this.handleParameterChange}/>
+                  Epochs : <input name="epochs" type="number" value={this.state.model.epochs} onChange={this.handleParameterChange}/>
+                  Ratio of Validation to Dataset / SPLIT_PCT : <input name="split_pct" type="number" value={this.state.model.split_pct} onChange={this.handleParameterChange}/>
+
+                  <Button onClick={this.handleTrain}>Retrain</Button>
+                
+              </Dialog>
+  
         </div>
-      
       )
     }
 }

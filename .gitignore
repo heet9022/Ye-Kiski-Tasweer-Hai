@@ -5,3 +5,6 @@ valid
 test2
 /stage2-256-r34.pth
 models
+__pycache__
+.pynb_checkpoints
+.gcloudignore

@@ -20,6 +20,12 @@ import {CameraAltOutlined, VideocamOutlined} from '@material-ui/icons';
 import Paper from '@material-ui/core/Paper';
 import {Card, CardActionArea , CardActions , CardContent , CardMedia , Typography, CardHeader } from '@material-ui/core';
 
+import {DropzoneArea} from 'material-ui-dropzone'
+
+import DropZoneUploader from './../components/DropZoneUploader'
+
+
+import socketIOClient from 'socket.io-client'
 
 function PostCard(props){
 
@@ -36,7 +42,7 @@ function PostCard(props){
       
     // </div>
       <div>
-        <Card raised='false' style={{maxWidth:400}} onClick={()=>{props.handlePostSelect(props.position)}} style={props.post.selected?{background:"green"}:{}}>
+        <Card raised='false' style={{maxWidth:400}} onClick={()=>{props.handlePostSelect(props.position)}} style={props.post.selected?{border: "1px solid #4caf50"}:{}}>
         { props.post.label &&
         <CardHeader
 
@@ -86,13 +92,18 @@ class Home extends React.Component{
         imagePreview:true,
         selected:0,
         selectedLabel : "buildings",
+
         loading:false,
         showParameterDialog:false,
+        home:true,
+        loading_train:false
         
+
 
       }
 
       this.handleDrop = this.handleDrop.bind(this);
+
       this.handleTest = this.handleTest.bind(this);
       this.handleTrain = this.handleTrain.bind(this);
       this.handleLabelConvert = this.handleLabelConvert.bind(this);
@@ -100,7 +111,24 @@ class Home extends React.Component{
       this.handleSelectedLabelChange = this.handleSelectedLabelChange.bind(this);
       this.handleToggleParametersDialog = this.handleToggleParametersDialog.bind(this);
       this.handleParameterChange = this.handleParameterChange.bind(this);
+
     }
+
+    componentDidMount(){
+      const socket = socketIOClient("http://Yetasveerkiskihaiserver-env.eba-mfgmqh2i.ap-south-1.elasticbeanstalk.com");
+      socket.on("tested",(data)=>{
+
+        console.log("data returned")
+        this.setState({posts:data.posts,submit:true,loading:false})
+      })
+
+      socket.on("trained",(data)=>{
+        console.log("model trained")
+        this.setState({showParameterDialog:false, loading_train:false})
+        
+      })
+    }
+
 
     handleDrop = (e) => {
       const files = e.target.files;
@@ -138,35 +166,37 @@ class Home extends React.Component{
                 const pids = (await customAxios.post('post',{posts:posts})).data || [];
                 console.log(pids)
 
-                const processedPosts = (await customAxios.post('model/test',{pids:pids})).data || []
+                ((await customAxios.post('model/test',{pids:pids})).data || [])
 
-                this.setState({posts:processedPosts,submit:true});
+                this.setState({loading:true,submit:false});
 
 
             }catch(e){
                 console.log(e);
                 console.log("Something Went Wrong");
             }
-            this.setState({loading:false})
         }
     )();
     }
 
     handleTrain = ()=>{
+      
       (
+
         async ()=>{
             try{
-                
+                this.setState({loading_train:true})
                 const pids = (await customAxios.post('post/edit',{posts:this.state.posts})).data || [];
 
                 const processedPosts = (await customAxios.post('model/train',{pids:pids,model:this.state.model})).data || []
 
-                this.setState({showParameterDialog:false})
+                this.setState({showParameterDialog:true})
 
             }catch(e){
                 console.log(e);
                 console.log("Something Went Wrong");
             }
+            
         }
     )();
     }
@@ -265,92 +295,130 @@ class Home extends React.Component{
       this.setState(newState);
     }
 
+    handleChange(files){
+      this.setState({
+        files: files
+      });
+      console.log(this.state.files)
+    }
+
+    handleHome(e)
+    {
+      this.setState(
+        {
+          // home:true,
+          submit:false
+        }
+      )
+    }
+
     render(){
       
       return(
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
-          {
-            this.state.loading?<CircularProgress/>:
-            <div>
-            {
-              !this.state.submit && 
-              <div className = {styles.fileUpload}>
+        this.state.loading?<div style={{height:'100vh', width:'100vw', textAlign:'center'}}><CircularProgress/></div>:
 
-                <label htmlFor="photo-button-file">
-                    <IconButton
-                        color="primary"
-                        // className={useStyles.button}
-                        component="span"
-                        edge="start"
-                    >
-                        <CameraAltOutlined/>
-                    </IconButton>
-                </label>
-                <input id = "photo-button-file"  multiple={true} type="file" accept="image/*" onChange={this.handleDrop}/>
-              
-              </div>
-            }
-            
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
-              {
-                !this.state.submit && this.state.files.length > 0 && this.state.files.map((file)=>{
-                    return <PostCard post={{image:URL.createObjectURL(file),label:null,confidence:null}}/> 
-                })
-              }
-            </div>
-            {
-              this.state.posts.length > 0 &&
-                this.state.selected > 0 &&
-                  <div>
-                      <h4>Convert {this.state.selected} posts label to : </h4> 
-                      <select onChange={this.handleSelectedLabelChange} defaultValue="buildings">
-                        <option value="buildings">Buildings</option>
-                        <option value="street">Street</option>
-                        <option valie="glacier">Glacier</option>
-                      </select>
-                      <button onClick={this.handleLabelConvert}>Convert</button>
-                  </div>
-            }
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
-              {
-                this.state.posts.length > 0 && this.state.posts.map((post,index)=>{
-                    return <PostCard position={index} post={post} handlePostSelect={this.handlePostSelect}/> 
-                })
-              }
-            </div>
+        <div style={{textAlign:'center'}}>
           
-            {
-              !this.state.submit &&
-              <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleTest()}}>
-                Test
-              </Button>
-
-            }
-            {
-              this.state.submit &&
-              <Button style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleToggleParametersDialog()}}>
-                Re Train
-              </Button>
+          {/* DROP AREA */}
+          {
             
-            }
-            <Dialog
-              open={this.state.showParameterDialog}
-              style={{padding:"50px"}}
-            > 
-              <DialogTitle>Change Model Parameters</DialogTitle>
-
-                Learning Rate : <input name="learning_rate" type="number" value={this.state.model.learning_rate} onChange={this.handleParameterChange}/>
-                Epochs : <input name="epochs" type="number" value={this.state.model.epochs} onChange={this.handleParameterChange}/>
-                Ratio of Validation to Dataset / SPLIT_PCT : <input name="split_pct" type="number" value={this.state.model.split_pct} onChange={this.handleParameterChange}/>
-
-                <Button onClick={this.handleTrain}>Re Train</Button>
-              
-            </Dialog>
+            !this.state.submit &&
+            <div style={{maxHeight:"80vh", overflowY:"scroll"}}>
+                <DropzoneArea 
+                    onChange={this.handleChange.bind(this)}
+                    acceptedFiles={['image/jpg', 'image/jpeg', 'image/png']}
+                    // showPreviews={true}
+                    maxFileSize={5000000}
+                    filesLimit = {500}
+                    showAlerts = {false}
+                    />
             </div>
-          }
-        </div>
+          } 
+
+
+          {/* <div style={{display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+            
+            {
+              this.state.loading?<CircularProgress/>:
+              
+              }
+              
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
+                {
+                  !this.state.submit && this.state.files.length > 0 && this.state.files.map((file)=>{
+                      return <PostCard post={{image:URL.createObjectURL(file),label:null,confidence:null}}/> 
+                  })
+                }
+              </div> */}
+              {
+                this.state.posts.length > 0 &&
+                  this.state.selected > 0 &&
+                    <div>
+                        <h4>Convert {this.state.selected} posts label to : </h4> 
+                        <select onChange={this.handleSelectedLabelChange} defaultValue="buildings">
+                          <option value="buildings">Buildings</option>
+                          <option value="street">Street</option>
+                          <option value="glacier">Glacier</option>
+                          <option value="mountain">Mountain</option>
+                          <option value="sea">Sea</option>
+                          <option value="forest">Forest</option>
+                        </select>
+                        <button onClick={this.handleLabelConvert}>Convert</button>
+                    </div>
+              }
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gridGap:"15px",maxHeight:"80vh",overflowY:"scroll"}}>
+                {
+                  this.state.submit && this.state.posts.length > 0 && this.state.posts.map((post,index)=>{
+                      return <PostCard position={index} post={post} handlePostSelect={this.handlePostSelect}/> 
+                  })
+                }
+              </div>
+            
+              {
+
       
+                <div>
+                  <br/>
+                  <Button size="small" style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleTest()}}>
+                    Test
+                  </Button>
+                </div>
+
+              }
+              {
+                this.state.submit &&
+                <div>
+                  <Button size="small" style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleToggleParametersDialog()}}>
+                    Retrain
+                  </Button>
+                  {/* <Button size="small" style={{display:"inline-block"}} variant="contained" color="primary" onClick={()=>{this.handleHome()}}>
+                    Home
+                  </Button> */}
+                </div>
+              
+              }
+              <Dialog
+
+                onClose = {()=>{this.setState({showParameterDialog:false})}}
+                open={this.state.showParameterDialog}
+                style={{padding:"50px"}}
+              > 
+                <DialogTitle>Change Model Parameters</DialogTitle>
+
+                  Learning Rate : <input name="learning_rate" type="number" value={this.state.model.learning_rate} onChange={this.handleParameterChange}/>
+                  Epochs : <input name="epochs" type="number" value={this.state.model.epochs} onChange={this.handleParameterChange}/>
+                  Ratio of Validation to Dataset / SPLIT_PCT : <input name="split_pct" type="number" value={this.state.model.split_pct} onChange={this.handleParameterChange}/>
+
+                  {this.state.loading_train?<div style={{textAlign:'center'}}><CircularProgress/></div>:<Button size="small" onClick={this.handleTrain}>Retrain</Button>}
+                
+              </Dialog>
+  
+        </div>
       )
     }
 }
 export default Home;
+
+
+
+

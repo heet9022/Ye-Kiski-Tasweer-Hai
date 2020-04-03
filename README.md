@@ -3,7 +3,7 @@ Image Classification model trained using a resnet34 cnn pretrained on imagenet d
 
 Backend via nodejs. Implemented web-sockets with 2 servers on the backend for retraining the data and reducing latency.     
  
-Run pip install -r requirements.txt present in the model directory to run the model.  
+Run "pip install -r requirements.txt" to run the model.
 Dataset from [Kaggle](https://www.kaggle.com/puneet6060/intel-image-classification).
 
 

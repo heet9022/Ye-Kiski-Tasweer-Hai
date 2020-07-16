@@ -1,6 +1,6 @@
 ## About
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).    
+This project was bootstrapped with [React](https://github.com/facebook/create-react-app).    
 <b>Image Classification model</b> trained using a resnet34 CNN pretrained on imagenet dataset. Applied transfer learning, regularization, progressive resizing and data augmentation to achieve a 94%+ accuracy.Model deployed via flask.  
 
 Backend via nodejs. Implemented web-sockets with 2 servers on the backend for retraining the data and reducing latency.     
